@@ -17,7 +17,7 @@ class Posts_Berita_6_Widget extends WP_Widget {
 
     public function form( $instance ) {
         $title      = ! empty( $instance['title'] ) ? $instance['title'] : '';
-        $style      = isset( $instance['style'] ) ? $instance['style'] : 'style1';
+        $style      = isset( $instance['style'] ) ? $instance['style'] : '1';
         $urutkan    = isset( $instance['urutkan'] ) ? $instance['urutkan'] : 'recent';
         $jumlah     = isset( $instance['jumlah'] ) ? $instance['jumlah'] : '5';
         $cat        = isset( $instance['cat'] ) ? $instance['cat'] : '';
@@ -38,7 +38,7 @@ class Posts_Berita_6_Widget extends WP_Widget {
         </p>
         <p>
             <label for="<?php echo $this->get_field_id( 'cat' ); ?>"><?php _e( 'Kategori :' ); ?></label>
-            <div><?php wp_dropdown_categories(['selected'=>$cat,'name'=>$this->get_field_name( 'cat' ),'show_count'=>true]); ?></div>
+            <span class="d-block"><?php wp_dropdown_categories(['selected'=>$cat,'name'=>$this->get_field_name( 'cat' ),'id'=>$this->get_field_id( 'cat' ),'class'=>'widefat','show_count'=>true,'show_option_all'=>__('Semua Kategori', 'velocity'),'hide_empty'=>false]); ?></span>
         </p>
         <p>
             <label for="<?php echo $this->get_field_id( 'urutkan' ); ?>"><?php _e( 'Urutkan berdasarkan:' ); ?></label>
@@ -57,7 +57,7 @@ class Posts_Berita_6_Widget extends WP_Widget {
     public function update( $new_instance, $old_instance ) {
         $instance = array();
         $instance['title'] = ( ! empty( $new_instance['title'] ) ) ? sanitize_text_field( $new_instance['title'] ) : '';
-        $instance['style'] = ( ! empty( $new_instance['style'] ) ) ? sanitize_text_field( $new_instance['style'] ) : 'style1';
+        $instance['style'] = ( ! empty( $new_instance['style'] ) ) ? sanitize_text_field( $new_instance['style'] ) : '1';
         $instance['urutkan'] = ( ! empty( $new_instance['urutkan'] ) ) ? sanitize_text_field( $new_instance['urutkan'] ) : 'recent';
         $instance['jumlah'] = ( ! empty( $new_instance['jumlah'] ) ) ? sanitize_text_field( $new_instance['jumlah'] ) : '5';
         $instance['cat'] = ( ! empty( $new_instance['cat'] ) ) ? sanitize_text_field( $new_instance['cat'] ) : '';
@@ -65,8 +65,8 @@ class Posts_Berita_6_Widget extends WP_Widget {
         return $instance;
     }
     public function widget( $args, $instance ) {
-        $title      = apply_filters( 'widget_title', $instance['title'] );
-        $style      = isset( $instance['style'] ) ? $instance['style'] : 'style1';
+        $title      = apply_filters( 'widget_title', isset( $instance['title'] ) ? $instance['title'] : '' );
+        $style      = isset( $instance['style'] ) ? $instance['style'] : '1';
         $urutkan    = isset( $instance['urutkan'] ) ? $instance['urutkan'] : 'recent';
         $jumlah     = isset( $instance['jumlah'] ) ? $instance['jumlah'] : '5';
         $cat        = isset( $instance['cat'] ) ? $instance['cat'] : '';
@@ -75,18 +75,21 @@ class Posts_Berita_6_Widget extends WP_Widget {
 
             if ( ! empty( $title ) ) {
                 echo $args['before_title'];
-                echo $cat?'<a style="color: inherit;" href="'.get_term_link( (int) $cat, 'category' ).'">'.$title.'</a>':$title;
+                $cat_link = $cat ? get_term_link( (int) $cat, 'category' ) : '';
+                echo ($cat_link && !is_wp_error($cat_link)) ? '<a href="' . esc_url($cat_link) . '">' . esc_html($title) . '</a>' : esc_html($title);
                 echo $args['after_title'];
             }
 
             $args_post = array(
-                'post_type' => 'post',
-                'posts_per_page' => $jumlah,
+                'post_type'           => 'post',
+                'posts_per_page'      => absint($jumlah) ? absint($jumlah) : 5,
+                'cat'                 => absint($cat),
+                'ignore_sticky_posts' => true,
+                'no_found_rows'       => true,
             );
 
             if ( $urutkan == 'popular' ) {
-                $args_post['orderby'] = 'meta_value_num';
-                $args_post['meta_key'] = 'hit';
+                $args_post = velocityberita6_popular_args($args_post);
             }
             
             // The Query
@@ -99,12 +102,12 @@ class Posts_Berita_6_Widget extends WP_Widget {
                         $the_query->the_post();
 
                         if($style=='3'){
-                            echo '<div class="col-6 pb-1">';
-                                echo module_cardposts(3);
+                            echo '<div class="col-6">';
+                                module_cardposts(3);
                             echo '</div>';
                         } else {
                             echo '<div class="col-12 border-bottom pb-2">';
-                                echo module_cardposts($style);
+                                module_cardposts($style);
                             echo '</div>';
                         }
 

@@ -18,10 +18,18 @@ defined('ABSPATH') || exit;
 get_header();
 
 $container  = velocitytheme_option('justg_container_type', 'container');
-$paged      = (get_query_var('paged')) ? get_query_var('paged') : '';
+$first_page = !is_paged();
+
+/**
+ * Kategori blok beranda dari Customizer: '' = semua, 'disable' = sembunyikan.
+ */
+$home_cat = function ($id) {
+    $cat = velocitytheme_option('cat_' . $id, '');
+    return 'disable' === $cat ? false : absint($cat);
+};
 ?>
 
-<div class="wrapper pt-2" id="index-wrapper">
+<div class="wrapper" id="index-wrapper">
 
     <div class="p-0 <?php echo esc_attr($container); ?>" id="content" tabindex="-1">
 
@@ -32,221 +40,175 @@ $paged      = (get_query_var('paged')) ? get_query_var('paged') : '';
 
                 <main class="site-main" id="main">
 
-                    <div class="carouselHome mb-4">                        
-                        <?php
-                        // The Query
-                        $posts_query = new WP_Query(
-                            array(
-                                'post_type'         => 'post',
-                                'posts_per_page'    => 5,
-                            )
-                        );
-                        // The Loop
-                        $nm = 1;
-                        if ($posts_query->have_posts()) {
-                            echo '<div id="carouselHome" class="carousel slide carousel-fade" data-bs-ride="carousel">';
-                                echo '<div class="carousel-inner">';
-                                while ($posts_query->have_posts()) {
-                                    $posts_query->the_post();
-                                    ?>
-                                    <div class="slideshow-post-item carousel-item  <?php echo ($nm == 1 ? 'active' : ''); ?>">
-                                        <a class="d-block position-relative" href="<?php echo get_the_permalink(); ?>">
-
-                                            <div class="ratio ratio-16x9 bg-light overflow-hidden">
-                                                <?php
-                                                if (has_post_thumbnail()) {
-                                                    $img_atr = wp_get_attachment_image_src(get_post_thumbnail_id(), 'large');
-                                                    echo '<img class="w-100" src="' . $img_atr[0] . '" alt="' . get_the_title() . '" loading="lazy">';
-                                                } ?>
-                                            </div>
-
-                                            <div class="carousel-caption text-md-start text-center start-0 end-0 bottom-0 p-2 pb-3">
-                                                <span class="bg-color-theme d-inline-block p-2 px-md-3" style="--bs-bg-opacity: 0.90;">
-                                                    <?php echo get_the_title(); ?>
-                                                </span>
-                                            </div>
-
-                                        </a>
-                                    </div>
+                    <?php
+                    $carousel_cat = $home_cat('bigcarousel_home');
+                    if ($first_page && false !== $carousel_cat) :
+                        $carousel_query = new WP_Query(array(
+                            'post_type'           => 'post',
+                            'posts_per_page'      => 5,
+                            'cat'                 => $carousel_cat,
+                            'ignore_sticky_posts' => true,
+                            'no_found_rows'       => true,
+                        ));
+                        if ($carousel_query->have_posts()) :
+                            ?>
+                            <div id="carouselHome" class="carousel slide carousel-fade mb-4" data-bs-ride="carousel">
+                                <div class="carousel-inner">
                                     <?php
-                                    $nm++;
-                                }
-                                $nm = 0;
-                                echo '</div>';
-                                echo '<div class="carousel-indicators m-0 p-0">';
-                                while ($posts_query->have_posts()) {
-                                    $posts_query->the_post();
-                                    echo '<button type="button" data-bs-target="#carouselHome" data-bs-slide-to="' . $nm . '" ' . ($nm == 0 ? 'class="active"' : '') . ' aria-current="true" aria-label="Slide ' . $nm . '"></button>';
-                                    $nm++;
-                                }
-                                echo '</div>';
-                            echo '</div>';
-                        }
-                        /* Restore original Post Data */
+                                    $nm = 0;
+                                    while ($carousel_query->have_posts()) :
+                                        $carousel_query->the_post();
+                                        // Slide pertama = gambar utama halaman: dimuat lebih dulu.
+                                        $img_attr = 0 === $nm
+                                            ? array('loading' => 'eager', 'fetchpriority' => 'high', 'sizes' => '(min-width: 992px) 640px, 100vw')
+                                            : array('sizes' => '(min-width: 992px) 640px, 100vw');
+                                        ?>
+                                        <div class="slideshow-post-item carousel-item<?php echo 0 === $nm ? ' active' : ''; ?>">
+                                            <a class="d-block position-relative" href="<?php the_permalink(); ?>">
+                                                <div class="ratio ratio-16x9 bg-light overflow-hidden">
+                                                    <?php echo velocityberita6_thumb('large', $img_attr); ?>
+                                                </div>
+                                                <div class="carousel-caption text-md-start text-center start-0 end-0 bottom-0 p-2 pb-4">
+                                                    <span class="bg-color-theme d-inline-block p-2 px-md-3"><?php the_title(); ?></span>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <?php
+                                        $nm++;
+                                    endwhile;
+                                    ?>
+                                </div>
+                                <?php if ($nm > 1) : ?>
+                                    <div class="carousel-indicators m-0 p-0">
+                                        <?php for ($i = 0; $i < $nm; $i++) : ?>
+                                            <button type="button" data-bs-target="#carouselHome" data-bs-slide-to="<?php echo $i; ?>"<?php echo 0 === $i ? ' class="active" aria-current="true"' : ''; ?> aria-label="<?php echo esc_attr(sprintf(__('Slide %d', 'justg'), $i + 1)); ?>"></button>
+                                        <?php endfor; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <?php
+                        endif;
                         wp_reset_postdata();
-                        ?>
-                    </div>
+                    endif;
+                    ?>
 
-                    <?php if(empty($paged)): ?>
-
-                        <?php
-                        $post1_title    = velocitytheme_option('title_posts_home_1', 'Recent Posts');
-                        $post1_cat      = velocitytheme_option('cat_posts_home_1');
-                        ?>
-                        <div class="widget part_posts_home_1">
-
-                            <h3 class="heading-theme position-relative">
-                                <span>
-                                    <?php if ($post1_cat && $post1_cat !== 'disable') : ?>
-                                        <a style="color: inherit;" href="<?php echo get_tag_link($post1_cat); ?>">
-                                            <?php echo $post1_title; ?>
-                                        </a>
-                                    <?php else: ?>
-                                        <?php echo $post1_title; ?>
-                                    <?php endif; ?>
-                                </span>
-                                <div class="position-absolute bottom-0 end-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-bookmark-fill color-theme" viewBox="0 0 16 16"> <path d="M2 2v13.5a.5.5 0 0 0 .74.439L8 13.069l5.26 2.87A.5.5 0 0 0 14 15.5V2a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2"></path> </svg>
-                                </div>
-                            </h3>
-                            <div class="part-post-home-1">
-                                <?php
-                                $post1_args = array(
-                                    'post_type'     => 'post',
-                                    'cat'           => $post1_cat,
-                                    'posts_per_page' => 4,
-                                );
-                                // The Query
-                                $post1query = new WP_Query($post1_args);
-                                if ($post1query->have_posts()) {
-                                    echo '<div class="carousel-posthome">';
-                                    while ($post1query->have_posts()) {
-                                        $post1query->the_post();
-                                        echo '<div class="item-posthome p-2">';
-                                        echo module_cardposts(6);
-                                        echo '</div>';
-                                    }
-                                    echo '</div>';
-                                }
-                                /* Restore original Post Data */
-                                wp_reset_postdata();
-                                ?>
-                            </div>
-                        </div>
+                    <?php if ($first_page) : ?>
 
                         <?php
-                        $post2_title    = velocitytheme_option('title_posts_home_2', 'Recent Posts');
-                        $post2_cat      = velocitytheme_option('cat_posts_home_2');
-                        ?>
-                        <div class="widget part_posts_home_2">
-                            <h3 class="heading-theme position-relative">
-                                <span>
-                                    <?php if ($post2_title && $post2_title !== 'disable') : ?>
-                                        <a style="color: inherit;" href="<?php echo get_tag_link($post2_cat); ?>">
-                                            <?php echo $post2_title; ?>
-                                        </a>
-                                    <?php else: ?>
-                                        <?php echo $post2_title; ?>
-                                    <?php endif; ?>
-                                </span>
-                                <div class="position-absolute bottom-0 end-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-bookmark-fill color-theme" viewBox="0 0 16 16"> <path d="M2 2v13.5a.5.5 0 0 0 .74.439L8 13.069l5.26 2.87A.5.5 0 0 0 14 15.5V2a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2"></path> </svg>
-                                </div>
-                            </h3>
-                            <div class="part-post-home-2">                            
-                                <?php
-                                $post2_args = array(
-                                    'post_type' => 'post',
-                                    'cat'       => $post2_cat,
-                                    'posts_per_page' => 5,
-                                );                            
-                                // The Query
-                                $post2query = new WP_Query($post2_args);
-                                $n2 = 1;
-                                if ($post2query->have_posts()) {
-                                    echo '<div class="row">';
-                                    while ($post2query->have_posts()) {
-                                        $post2query->the_post();
-
-                                        if($n2==1){
-                                            echo '<div class="col-12 pb-3">';
-                                                echo module_cardposts(5);
-                                            echo '</div>';
-                                        } else {
-                                            echo '<div class="col-6 col-xl-3 pb-3">';
-                                                echo module_cardposts(3);
-                                            echo '</div>';
-                                        }
-
-                                        $n2++;
-                                    }
-                                    echo '</div>';
-                                }
+                        $post1_cat = $home_cat('posts_home_1');
+                        if (false !== $post1_cat) :
+                            $post1query = new WP_Query(array(
+                                'post_type'           => 'post',
+                                'cat'                 => $post1_cat,
+                                'posts_per_page'      => 4,
+                                'ignore_sticky_posts' => true,
+                                'no_found_rows'       => true,
+                            ));
+                            if ($post1query->have_posts()) :
                                 ?>
-                            </div>
-                        </div>
-                    
+                                <section class="widget part_posts_home_1">
+                                    <?php velocityberita6_heading(velocitytheme_option('title_posts_home_1', 'Recent Posts'), $post1_cat ? get_category_link($post1_cat) : ''); ?>
+                                    <div class="vb-slider" data-autoplay="4000">
+                                        <div class="vb-slider-track">
+                                            <?php
+                                            while ($post1query->have_posts()) :
+                                                $post1query->the_post();
+                                                echo '<div class="vb-slide">';
+                                                module_cardposts(6);
+                                                echo '</div>';
+                                            endwhile;
+                                            ?>
+                                        </div>
+                                        <button type="button" class="vb-slider-prev" aria-label="<?php esc_attr_e('Sebelumnya', 'justg'); ?>"><?php echo velocityberita6_icon('prev', 14); ?></button>
+                                        <button type="button" class="vb-slider-next" aria-label="<?php esc_attr_e('Berikutnya', 'justg'); ?>"><?php echo velocityberita6_icon('next', 14); ?></button>
+                                    </div>
+                                </section>
+                                <?php
+                            endif;
+                            wp_reset_postdata();
+                        endif;
+                        ?>
+
+                        <?php
+                        $post2_cat = $home_cat('posts_home_2');
+                        if (false !== $post2_cat) :
+                            $post2query = new WP_Query(array(
+                                'post_type'           => 'post',
+                                'cat'                 => $post2_cat,
+                                'posts_per_page'      => 5,
+                                'ignore_sticky_posts' => true,
+                                'no_found_rows'       => true,
+                            ));
+                            if ($post2query->have_posts()) :
+                                ?>
+                                <section class="widget part_posts_home_2">
+                                    <?php velocityberita6_heading(velocitytheme_option('title_posts_home_2', 'Recent Posts'), $post2_cat ? get_category_link($post2_cat) : ''); ?>
+                                    <div class="row g-2">
+                                        <?php
+                                        $n2 = 1;
+                                        while ($post2query->have_posts()) :
+                                            $post2query->the_post();
+                                            echo 1 === $n2 ? '<div class="col-12 pb-1">' : '<div class="col-6 col-xl-3">';
+                                            module_cardposts(1 === $n2 ? 5 : 3);
+                                            echo '</div>';
+                                            $n2++;
+                                        endwhile;
+                                        ?>
+                                    </div>
+                                </section>
+                                <?php
+                            endif;
+                            wp_reset_postdata();
+                        endif;
+                        ?>
+
                     <?php endif; ?>
 
                     <?php get_berita_iklan('iklan_home_1'); ?>
 
-                    <div>
-                        <h3 class="heading-theme position-relative">
-                            <span>
-                               Berita Terbaru
-                            </span>
-                            <div class="position-absolute bottom-0 end-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-bookmark-fill color-theme" viewBox="0 0 16 16"> <path d="M2 2v13.5a.5.5 0 0 0 .74.439L8 13.069l5.26 2.87A.5.5 0 0 0 14 15.5V2a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2"></path> </svg>
-                            </div>
-                        </h3>
-                        <div>
-                            <?php if (have_posts()) { 
-                                $postcount=1;
-                                while (have_posts()) {
-                                    the_post();
-                                    ?>
-                                    <article class="mb-4">
-                                        <div class="row">
-                                            <div class="col-5 col-md-4">
-                                                <a href="<?php echo get_the_permalink(); ?>" class="ratio ratio-4x3 bg-light overflow-hidden">
-                                                    <?php echo get_the_post_thumbnail( get_the_ID(), 'medium', array( 'class' => 'w-100' ) ); ?>
-                                                </a>
-                                            </div>
-                                            <div class="col-7 col-md-8">
-                                                <?php
-                                                the_title(
-                                                    sprintf('<h2 class="h6 fw-bold"><a href="%s" rel="bookmark">', esc_url(get_permalink())),
-                                                    '</a></h2>'
-                                                );
-                                                ?>
-                                                <div class="d-none d-md-block mb-md-2">
-                                                    <?php echo vdberita_limit_text(strip_tags(get_the_excerpt()), 15); ?>
-                                                    <br>
-                                                    <a class="btn btn-sm btn-secondary mt-2 border-0" style="font-size: 0.75rem;--bs-btn-bg:var(--color-theme);" href="<?php echo get_the_permalink(); ?>">Read More</a>
-                                                </div>
-                                                <div class="opacity-75">                                                    
-                                                    <small>
-                                                        Posted by : <?php echo get_the_author(); ?>
-                                                    </small>
-                                                    <small class="ms-1">
-                                                        on <?php echo get_the_date(); ?>
-                                                    </small>
-                                                </div>
-                                            </div>
+                    <section class="widget">
+                        <?php velocityberita6_heading(__('Berita Terbaru', 'justg')); ?>
+                        <?php if (have_posts()) :
+                            $postcount = 1;
+                            while (have_posts()) :
+                                the_post();
+                                ?>
+                                <article <?php post_class('post-list mb-4'); ?>>
+                                    <div class="row g-3">
+                                        <div class="col-5 col-md-4">
+                                            <a href="<?php the_permalink(); ?>" class="d-block ratio ratio-4x3 bg-light overflow-hidden" tabindex="-1" aria-hidden="true">
+                                                <?php echo velocityberita6_thumb('medium'); ?>
+                                            </a>
                                         </div>
-                                    </article>
-                                    
-                                    <?php 
-                                        if ($postcount == 3) :
-                                            get_berita_iklan('iklan_home_2');
-                                        endif;
-                                        $postcount++;
-                                    ?>
-                            <?php } } ?>
-                            <!-- Display the pagination component. -->
-                            <?php justg_pagination(); ?>
-                        </div>
-                    </div>
+                                        <div class="col-7 col-md-8">
+                                            <?php
+                                            the_title(
+                                                sprintf('<h2 class="h6 fw-bold mb-1 lh-sm"><a href="%s" rel="bookmark">', esc_url(get_permalink())),
+                                                '</a></h2>'
+                                            );
+                                            ?>
+                                            <div class="d-none d-md-block mb-2">
+                                                <?php echo esc_html(vdberita_limit_text(get_the_excerpt(), 20)); ?>
+                                            </div>
+                                            <div class="post-meta opacity-75">
+                                                <?php velocityberita6_post_meta(0); ?>
+                                            </div>
+                                            <a class="btn btn-sm btn-theme mt-2 d-none d-md-inline-block" href="<?php the_permalink(); ?>"><?php esc_html_e('Baca Selengkapnya', 'justg'); ?></a>
+                                        </div>
+                                    </div>
+                                </article>
+                                <?php
+                                if (3 === $postcount) {
+                                    get_berita_iklan('iklan_home_2');
+                                }
+                                $postcount++;
+                            endwhile;
+                        else :
+                            get_template_part('loop-templates/content', 'none');
+                        endif;
+                        ?>
+                        <?php justg_pagination(); ?>
+                    </section>
 
                 </main><!-- #main -->
 

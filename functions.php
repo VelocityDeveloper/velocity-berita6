@@ -21,11 +21,11 @@
 $inc = get_stylesheet_directory() . '/inc';
 $includes = [
 	'enqueue.php',
+	'customizer.php',
 	'function-child.php',
 	'function-vdposts.php',
 	'widget-posts-berita.php',
 	'widget-tabs-berita.php',
-	// 'shortcodes.php'
 ];
 
 foreach ($includes as $include) {

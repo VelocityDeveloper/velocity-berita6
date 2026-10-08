@@ -22,7 +22,6 @@ class Tabs_Berita_6_Widget extends WP_Widget {
             <label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Judul:' ); ?></label>
             <input class="widefat" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>" type="text" value="<?php echo esc_attr( $title ); ?>">
         </p>
-        <p>
         <?php
     }
 
@@ -33,7 +32,8 @@ class Tabs_Berita_6_Widget extends WP_Widget {
         return $instance;
     }
     public function widget( $args, $instance ) {
-        $title = apply_filters( 'widget_title', $instance['title'] );
+        $title = apply_filters( 'widget_title', isset( $instance['title'] ) ? $instance['title'] : '' );
+        $uid   = esc_attr( $this->id );
 
         echo $args['before_widget'];
 
@@ -43,33 +43,35 @@ class Tabs_Berita_6_Widget extends WP_Widget {
 
             ?>
 
-            <ul class="nav nav-tabs p-0" id="widgetberitaTabs" role="tablist" style="border-bottom: 0.2rem solid var(--color-theme);">
+            <ul class="nav nav-tabs widget-tabs p-0" id="<?php echo $uid; ?>-tabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link rounded-0 mb-0 bg-light active" id="wb-popular-tab" data-bs-toggle="tab" data-bs-target="#wb-tab-popular" type="button" role="tab" aria-controls="wb-tab-popular" aria-selected="true">
-                        POPULAR
+                    <button class="nav-link active" id="<?php echo $uid; ?>-popular-tab" data-bs-toggle="tab" data-bs-target="#<?php echo $uid; ?>-popular" type="button" role="tab" aria-controls="<?php echo $uid; ?>-popular" aria-selected="true">
+                        <?php esc_html_e( 'Populer', 'velocity' ); ?>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link rounded-0 mb-0 mx-1 bg-light" id="wb-comments-tab" data-bs-toggle="tab" data-bs-target="#wb-tab-comments" type="button" role="tab" aria-controls="wb-tab-comments" aria-selected="false">
-                        COMMENTS
+                    <button class="nav-link" id="<?php echo $uid; ?>-comments-tab" data-bs-toggle="tab" data-bs-target="#<?php echo $uid; ?>-comments" type="button" role="tab" aria-controls="<?php echo $uid; ?>-comments" aria-selected="false">
+                        <?php esc_html_e( 'Komentar', 'velocity' ); ?>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link rounded-0 mb-0 bg-light" id="wb-tags-tab" data-bs-toggle="tab" data-bs-target="#wb-tab-tags" type="button" role="tab" aria-controls="wb-tab-tags" aria-selected="false">
-                        TAGS
+                    <button class="nav-link" id="<?php echo $uid; ?>-tags-tab" data-bs-toggle="tab" data-bs-target="#<?php echo $uid; ?>-tags" type="button" role="tab" aria-controls="<?php echo $uid; ?>-tags" aria-selected="false">
+                        <?php esc_html_e( 'Tag', 'velocity' ); ?>
                     </button>
                 </li>
             </ul>
-            <div class="tab-content pt-2" id="widgetberitaTabsContent">
-                <div class="tab-pane fade show active" id="wb-tab-popular" role="tabpanel" aria-labelledby="wb-popular-tab" tabindex="0">
+            <div class="tab-content pt-2" id="<?php echo $uid; ?>-content">
+                <div class="tab-pane fade show active" id="<?php echo $uid; ?>-popular" role="tabpanel" aria-labelledby="<?php echo $uid; ?>-popular-tab" tabindex="0">
                     <?php
                     // The Query
                     $popular_query = new WP_Query(
-                        array(
-                            'post_type'         => 'post',
-                            'posts_per_page'    => 3,
-                            'meta_key'          => 'hit',
-                            'orderby'           => 'meta_value_num',
+                        velocityberita6_popular_args(
+                            array(
+                                'post_type'           => 'post',
+                                'posts_per_page'      => 3,
+                                'ignore_sticky_posts' => true,
+                                'no_found_rows'       => true,
+                            )
                         )
                     );
                     // The Loop
@@ -78,7 +80,7 @@ class Tabs_Berita_6_Widget extends WP_Widget {
                             while ($popular_query->have_posts()) {
                                 $popular_query->the_post();
                                 echo '<div class="tabpopular-post-item border-bottom pb-2 mb-2">';                                    
-                                    echo module_cardposts(1);
+                                    module_cardposts(1);
                                 echo '</div>';
                             }
                         echo '</div>';
@@ -87,7 +89,7 @@ class Tabs_Berita_6_Widget extends WP_Widget {
                     wp_reset_postdata();
                     ?>
                 </div>
-                <div class="tab-pane fade" id="wb-tab-comments" role="tabpanel" aria-labelledby="wb-comments-tab" tabindex="0">
+                <div class="tab-pane fade" id="<?php echo $uid; ?>-comments" role="tabpanel" aria-labelledby="<?php echo $uid; ?>-comments-tab" tabindex="0">
                     <?php
                     // The Query
                     $postcomment_query = new WP_Query(
@@ -96,6 +98,8 @@ class Tabs_Berita_6_Widget extends WP_Widget {
                             'posts_per_page'    => 3,
                             'orderby'           => 'comment_count',
                             'order'             => 'DESC',
+                            'ignore_sticky_posts' => true,
+                            'no_found_rows'     => true,
                         )
                     );
                     // The Loop
@@ -112,8 +116,8 @@ class Tabs_Berita_6_Widget extends WP_Widget {
                                         echo '</div>';
                                     echo '</div>';
                                     echo '<div class="col">';
-                                        echo '<a class="fw-bold" href="' . get_the_permalink() . '">' . get_the_title() . '</a>';
-                                        echo '<div class="text-muted"><small>Posted on: ' . get_the_date() . '</small></div>';
+                                        echo '<a class="fw-bold" href="' . esc_url( get_permalink() ) . '">' . esc_html( get_the_title() ) . '</a>';
+                                        echo '<div class="text-muted"><small>' . esc_html( get_the_date() ) . '</small></div>';
                                     echo '</div>';
                                 echo '</div>';
                             echo '</div>';
@@ -124,7 +128,7 @@ class Tabs_Berita_6_Widget extends WP_Widget {
                     wp_reset_postdata();
                     ?>
                 </div>
-                <div class="tab-pane fade" id="wb-tab-tags" role="tabpanel" aria-labelledby="berita-tab" tabindex="0">
+                <div class="tab-pane fade" id="<?php echo $uid; ?>-tags" role="tabpanel" aria-labelledby="<?php echo $uid; ?>-tags-tab" tabindex="0">
                     <?php
                     $tags = get_tags(array(
                         'orderby'   => 'count',
@@ -133,10 +137,7 @@ class Tabs_Berita_6_Widget extends WP_Widget {
                     ));
                     echo '<div class="tabpost_tags">';
                     foreach ($tags as $tag) {
-                        $tag_link = get_tag_link($tag->term_id);
-
-                        echo "<a href='{$tag_link}' title='{$tag->name} Tag' class='btn btn-sm btn-dark me-1 mb-1 bg-color-theme rounded-0'>";
-                        echo "{$tag->name}</a>";
+                        echo '<a href="' . esc_url( get_tag_link( $tag->term_id ) ) . '" class="btn btn-sm btn-theme me-1 mb-1">' . esc_html( $tag->name ) . '</a>';
                     }
                     echo '</div>';
                     ?>

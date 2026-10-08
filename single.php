@@ -16,11 +16,11 @@ $format     = get_post_format() ?: 'standard';
 
 <div class="wrapper" id="single-wrapper">
 
-	<div class="<?php echo esc_attr($container); ?>" id="content" tabindex="-1">
+	<div class="p-0 <?php echo esc_attr($container); ?>" id="content" tabindex="-1">
 
-        <div class="card rounded-1 shadow-sm bg-light pt-2 px-3 mb-3" style="font-size: 0.8rem;">
-            <?php echo justg_breadcrumb(); ?>
-        </div>
+		<div class="breadcrumb-box bg-light border px-3 pt-2 mb-3">
+			<?php velocityberita6_breadcrumb(); ?>
+		</div>
 
 		<div class="row">
 
@@ -30,145 +30,116 @@ $format     = get_post_format() ?: 'standard';
 			<main class="site-main" id="main">
 
 				<?php
-
 				while (have_posts()) {
 					the_post();
-                    ?>
+					?>
 
-                    <?php get_berita_iklan('iklan_content'); ?>
+					<article <?php post_class(); ?> id="post-<?php the_ID(); ?>">
 
-                    <?php the_title('<h1 class="entry-title h5 fw-bold">', '</h1>'); ?>
+						<?php get_berita_iklan('iklan_content'); ?>
 
-                    <div class="position-relative d-flex mt-2 justify-content-between align-items-center py-1 ps-2 pe-4 bg-pattern border text-muted bg-light mb-3">
-                        <div>
-                            <small>
-                                Posted by : <?php echo get_the_author(); ?>
-                            </small>
-                            <small class="ms-2">
-                                <?php echo get_the_date(); ?>
-                            </small>
-                            
-                            <?php 
-                            $categories = get_the_terms( get_the_ID(), 'category' );
-                            if ($categories) : ?>
-                                <small class="ms-2">
-                                    Category :
-                                    <?php foreach ($categories as $index => $tag) : ?>
-                                        <?php echo $index === 0 ? '' : ','; ?>
-                                        <a href="<?php echo get_tag_link($tag->term_id); ?>"> <?php echo $tag->name; ?> </a>
-                                        <?php if ($index > 1) {
-                                            break;
-                                        } ?>
-                                    <?php endforeach; ?>
-                                </small>
-                            <?php endif; ?>
-                        </div>
-                        <div class="position-absolute bottom-0 end-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-bookmark-fill color-theme" viewBox="0 0 16 16"> <path d="M2 2v13.5a.5.5 0 0 0 .74.439L8 13.069l5.26 2.87A.5.5 0 0 0 14 15.5V2a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2"/> </svg>
-                        </div>
-                    </div>
+						<?php the_title('<h1 class="entry-title h4 fw-bold lh-sm">', '</h1>'); ?>
 
-                    <div class="entry-content">
+						<div class="post-meta position-relative mt-2 py-1 ps-2 pe-5 bg-pattern border text-muted mb-3">
+							<?php velocityberita6_post_meta(3); ?>
+							<span class="heading-mark color-theme"><?php echo velocityberita6_icon('bookmark', 30); ?></span>
+						</div>
 
-                        <?php get_berita_iklan('iklan_content_2'); ?>
+						<div class="entry-content">
 
-                        <?php
-                        if (has_post_thumbnail() && $format !== 'video' && $format !== 'gallery') {
-                            echo '<div class="mb-3">';
-                                echo get_the_post_thumbnail( get_the_ID(), 'full', array( 'class' => 'w-100' ) );
-                                $featured_image_caption = get_the_post_thumbnail_caption(get_the_ID());
-                                if($featured_image_caption){
-                                    echo '<div class="text-muted fst-italic"><small>' . $featured_image_caption . '</small></div>';
-                                }
-                            echo '</div>';
-                        }
-                        ?>
+							<?php get_berita_iklan('iklan_content_2'); ?>
 
-                        <?php the_content(); ?>
-                        
-                        <?php $gettags = get_the_tags(get_the_ID()); ?>
-                        <?php if ($gettags) : ?>
-                            <div class="mt-2 mb-4">
-                                <?php foreach ($gettags as $index => $tag) : ?>
-                                    <?php echo $index === 0 ? '' : ' '; ?>
-                                    <a class="btn btn-dark btn-sm bg-color-theme border-0 rounded-0" href="<?php echo get_tag_link($tag->term_id); ?>"> <?php echo $tag->name; ?> </a>
-                                    <?php if ($index > 1) {
-                                        break;
-                                    } ?>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <?php get_berita_iklan('iklan_content_3'); ?>
+							<?php
+							if (has_post_thumbnail() && $format !== 'video' && $format !== 'gallery') {
+								echo '<figure class="mb-3">';
+									echo get_the_post_thumbnail(get_the_ID(), 'full', array(
+										'class'         => 'w-100 h-auto',
+										'loading'       => 'eager',
+										'fetchpriority' => 'high',
+										'sizes'         => '(min-width: 992px) 640px, 100vw',
+									));
+									$featured_image_caption = get_the_post_thumbnail_caption(get_the_ID());
+									if ($featured_image_caption) {
+										echo '<figcaption class="text-muted fst-italic mt-1"><small>' . wp_kses_post($featured_image_caption) . '</small></figcaption>';
+									}
+								echo '</figure>';
+							}
+							?>
 
-                        <?php
-                        wp_link_pages(
-                            array(
-                                'before' => '<div class="page-links">' . __('Pages:', 'justg'),
-                                'after'  => '</div>',
-                            )
-                        );
-                        ?>
+							<?php the_content(); ?>
 
-                    </div><!-- .entry-content -->
+							<?php
+							wp_link_pages(
+								array(
+									'before' => '<div class="page-links">' . __('Pages:', 'justg'),
+									'after'  => '</div>',
+								)
+							);
+							?>
 
-                    <div class="single-post-nav d-md-flex justify-content-between border-top border-bottom pt-1 my-3">
-                        <div class="share-post">
-                            <?php echo justg_share(); ?>
-                        </div>
-                        <div class="nav-post">
-                            <div class="btn-group" role="group" aria-label="Navigation Post">
-                                <?php
-                                $prev_post = get_adjacent_post(false, '', true);
-                                if (!empty($prev_post)) {
-                                    echo '<a href="' . get_permalink($prev_post->ID) . '" class="btn btn-sm btn-light border" title="' . $prev_post->post_title . '">Prev</a>';
-                                }
-                                $next_post = get_adjacent_post(false, '', false);
-                                if (!empty($next_post)) {
-                                    echo '<a href="' . get_permalink($next_post->ID) . '" class="btn btn-sm btn-light border" title="' . $next_post->post_title . '">Next</a>';
-                                }
-                                ?>
-                            </div>
-                        </div>
-                    </div>
+							<?php $gettags = get_the_tags(); ?>
+							<?php if ($gettags) : ?>
+								<div class="post-tags mt-3 mb-3 d-flex flex-wrap gap-1">
+									<?php foreach ($gettags as $tag) : ?>
+										<a class="btn btn-sm btn-theme" href="<?php echo esc_url(get_tag_link($tag->term_id)); ?>">#<?php echo esc_html($tag->name); ?></a>
+									<?php endforeach; ?>
+								</div>
+							<?php endif; ?>
 
-                    <div class="mostview-post">
-                        <h6 class="heading-theme mb-3"><span>RELATED POSTS</span></h6>
-                        <div class="related-post-loop">
-                            <?php                            
-                            $categories = wp_get_post_categories(get_the_ID());
-                            $category_ids = array();
-                            foreach ($categories as $category) {
-                                $category_ids[] = $category;
-                            }
-                            $post1_args = array(
-                                'post_type'         => 'post',
-                                'post__not_in'      => [get_the_ID()],
-                                'posts_per_page'    => 4,
-                                'category__in'      => $category_ids
-                            );
-                            // The Query
-                            $the_query = new WP_Query($post1_args);
-                            if ($the_query->have_posts()) {
-                                echo '<div class="row g-3 align-items-stretch">';
-                                while ($the_query->have_posts()) {
-                                    $the_query->the_post();
-                                    echo '<article class="col-md-6 col-xl-3">';
-                                        echo '<div class="bg-light p-2 h-100">';
-                                        echo module_cardposts(2);
-                                        echo '</div>';
-                                    echo '</article>';
-                                }
-                                echo '</div>';
-                            }
-                            ?>
-                        </div>
-                    </div>
+							<?php get_berita_iklan('iklan_content_3'); ?>
 
-                    <?php
+						</div><!-- .entry-content -->
+
+						<div class="single-post-nav d-flex flex-wrap gap-2 justify-content-between align-items-center border-top border-bottom py-2 my-3">
+							<?php velocityberita6_share(); ?>
+							<div class="btn-group" role="group" aria-label="<?php esc_attr_e('Navigasi artikel', 'justg'); ?>">
+								<?php
+								$prev_post = get_adjacent_post(false, '', true);
+								if (!empty($prev_post)) {
+									echo '<a href="' . esc_url(get_permalink($prev_post->ID)) . '" class="btn btn-sm btn-light border" title="' . esc_attr(get_the_title($prev_post)) . '" rel="prev">&lsaquo; ' . esc_html__('Sebelumnya', 'justg') . '</a>';
+								}
+								$next_post = get_adjacent_post(false, '', false);
+								if (!empty($next_post)) {
+									echo '<a href="' . esc_url(get_permalink($next_post->ID)) . '" class="btn btn-sm btn-light border" title="' . esc_attr(get_the_title($next_post)) . '" rel="next">' . esc_html__('Berikutnya', 'justg') . ' &rsaquo;</a>';
+								}
+								?>
+							</div>
+						</div>
+
+					</article>
+
+					<?php
+					$related_query = new WP_Query(array(
+						'post_type'           => 'post',
+						'post__not_in'        => array(get_the_ID()),
+						'posts_per_page'      => 4,
+						'category__in'        => wp_get_post_categories(get_the_ID()),
+						'ignore_sticky_posts' => true,
+						'no_found_rows'       => true,
+					));
+					if ($related_query->have_posts()) :
+						?>
+						<section class="related-post mb-4">
+							<?php velocityberita6_heading(__('Berita Terkait', 'justg'), '', 'h2'); ?>
+							<div class="row g-3 align-items-stretch">
+								<?php
+								while ($related_query->have_posts()) {
+									$related_query->the_post();
+									echo '<article class="col-6 col-xl-3">';
+										echo '<div class="bg-light p-2 h-100">';
+										module_cardposts(2);
+										echo '</div>';
+									echo '</article>';
+								}
+								?>
+							</div>
+						</section>
+						<?php
+					endif;
+					wp_reset_postdata();
+
 					// If comments are open or we have at least one comment, load up the comment template.
 					if (comments_open() || get_comments_number()) {
-
 						do_action('justg_before_comments');
 						comments_template();
 						do_action('justg_after_comments');

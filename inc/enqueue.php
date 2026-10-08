@@ -14,28 +14,22 @@ if (!defined('ABSPATH')) {
 if (!function_exists('justg_child_enqueue_parent_style')) {
     function justg_child_enqueue_parent_style()
     {
-        // Dynamically get version number of the parent stylesheet (lets browsers re-cache your stylesheet when you update your theme)
         $parenthandle = 'parent-style';
-        $theme = wp_get_theme();
+        $theme        = wp_get_theme();
+        $dir          = get_stylesheet_directory();
 
-        // Load the stylesheet
         wp_enqueue_style(
             $parenthandle,
             get_template_directory_uri() . '/style.css',
-            array(),  // if the parent theme code has a dependency, copy it to here
+            array(),
             $theme->parent()->get('Version')
         );
 
-        wp_enqueue_style( 'slick', 'https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css', 1);
-        wp_enqueue_style( 'slick-theme', 'https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css', 1);
-        wp_enqueue_script( 'slick', 'https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js', array(), 1, true );
-
-        $css_version = $theme->parent()->get('Version') . '.' . filemtime(get_stylesheet_directory() . '/css/custom.css');
         wp_enqueue_style(
             'custom-style',
             get_stylesheet_directory_uri() . '/css/custom.css',
-            array(),  // if the parent theme code has a dependency, copy it to here
-            $css_version
+            array(),
+            $theme->get('Version') . '.' . filemtime($dir . '/css/custom.css')
         );
 
         wp_enqueue_style(
@@ -45,8 +39,14 @@ if (!function_exists('justg_child_enqueue_parent_style')) {
             $theme->get('Version')
         );
 
-        $js_version = $theme->parent()->get('Version') . '.' . filemtime(get_stylesheet_directory() . '/js/custom.js');
-        wp_enqueue_script('justg-custom-scripts', get_stylesheet_directory_uri() . '/js/custom.js', array(), $js_version, true);
+        wp_enqueue_script(
+            'justg-custom-scripts',
+            get_stylesheet_directory_uri() . '/js/custom.js',
+            array(),
+            $theme->get('Version') . '.' . filemtime($dir . '/js/custom.js'),
+            array('in_footer' => true, 'strategy' => 'defer')
+        );
     }
-    add_action('wp_enqueue_scripts', 'justg_child_enqueue_parent_style');
+    // Prioritas 30: dimuat sesudah CSS induk (theme.min.css, prioritas 20) agar tidak tertimpa.
+    add_action('wp_enqueue_scripts', 'justg_child_enqueue_parent_style', 30);
 }
